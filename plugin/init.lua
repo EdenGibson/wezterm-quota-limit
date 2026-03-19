@@ -91,8 +91,29 @@ local function cred_path()
   return home .. "/.claude/.credentials.json"
 end
 
--- Read credentials file
+-- Read credentials from macOS Keychain
+local function read_keychain()
+  local success, stdout, stderr = wezterm.run_child_process({
+    "security", "find-generic-password",
+    "-s", "Claude Code-credentials",
+    "-w",
+  })
+  if success and stdout and stdout ~= "" then
+    return stdout:gsub("%s+$", ""), nil
+  end
+  return nil, "keychain: no credential found"
+end
+
+-- Read credentials file (tries macOS Keychain first on Apple systems)
 local function read_credentials()
+  local is_mac = (wezterm.target_triple or ""):find("apple") ~= nil
+  if is_mac then
+    local content, err = read_keychain()
+    if content then
+      return content, nil
+    end
+  end
+
   local path = cred_path()
   local f = io.open(path, "r")
   if not f then
