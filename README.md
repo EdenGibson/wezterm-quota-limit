@@ -18,7 +18,7 @@ A WezTerm plugin that shows your Claude API usage quota directly in the terminal
 ## Prerequisites
 
 - [WezTerm](https://wezfurlong.org/wezterm/) with plugin support
-- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed and authenticated (OAuth credentials at `~/.claude/.credentials.json`)
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed and authenticated (macOS Keychain or `~/.claude/.credentials.json`)
 - `curl` available on PATH
 
 ## Installation
@@ -62,11 +62,11 @@ Lua LSP types are available via [wezterm-types](https://github.com/DrKJeff16/wez
 
 ## How it works
 
-The plugin reads your Claude Code OAuth token from `~/.claude/.credentials.json` and polls the Anthropic usage API every 60 seconds (configurable). Results are cached between polls. The status bar updates on every WezTerm `update-status` event, but only makes a network request when the cache expires.
+The plugin reads your Claude Code OAuth token and polls the Anthropic usage API every 60 seconds (configurable). On macOS, it first tries the macOS Keychain (where Claude Code stores credentials natively), then falls back to `~/.claude/.credentials.json`. On other platforms, it reads the credentials file directly. Results are cached between polls. The status bar updates on every WezTerm `update-status` event, but only makes a network request when the cache expires.
 
 ### Token management
 
-The plugin re-reads the token from disk on every poll, so it automatically picks up tokens refreshed by Claude Code. If the token has expired or auth fails (401/403), it waits for Claude Code to refresh the credentials rather than attempting its own token refresh. When it detects a new token on disk, error state resets and normal polling resumes.
+The plugin re-reads the token on every poll, so it automatically picks up tokens refreshed by Claude Code. If the token has expired or auth fails (401/403), it waits for Claude Code to refresh the credentials rather than attempting its own token refresh. When it detects a new token, error state resets and normal polling resumes.
 
 ### Burn rate estimates
 
