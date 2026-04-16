@@ -7,11 +7,55 @@ local config = {
   poll_interval_secs = 60,
   position = "right", -- "left" or "right"
   dashboard_key = { key = "u", mods = "CTRL|SHIFT" }, -- keybind to open dashboard
+  colors = "dark", -- "dark", "light", "auto", or a table { green, yellow, red, dim, bright }
   icons = {
     bolt = "⚡",
     week = "▪",
   },
 }
+
+-- Built-in color palettes
+local PALETTES = {
+  dark = {
+    green  = "#9ece6a",
+    yellow = "#e0af68",
+    red    = "#f7768e",
+    dim    = "#565f89",
+    bright = "#c0caf5",
+  },
+  light = {
+    green  = "#40a02b",
+    yellow = "#df8e1d",
+    red    = "#d20f39",
+    dim    = "#6c6f85",
+    bright = "#4c4f69",
+  },
+}
+
+-- Resolve which palette to use based on config.colors and system appearance
+local function resolve_palette()
+  local c = config.colors
+  if type(c) == "table" then
+    -- User provided explicit colors; fill any gaps from the dark palette
+    local base = PALETTES.dark
+    return {
+      green  = c.green  or base.green,
+      yellow = c.yellow or base.yellow,
+      red    = c.red    or base.red,
+      dim    = c.dim    or base.dim,
+      bright = c.bright or base.bright,
+    }
+  end
+  if c == "auto" then
+    local ok, appearance = pcall(wezterm.gui.get_appearance)
+    if ok and appearance and appearance:find("Dark") then
+      return PALETTES.dark
+    else
+      return PALETTES.light
+    end
+  end
+  return PALETTES[c] or PALETTES.dark
+end
 
 -- Cached usage data
 local cached_data = nil
@@ -36,37 +80,36 @@ local function hex_to_fg(hex)
   return ESC .. "38;2;" .. r .. ";" .. g .. ";" .. b .. "m"
 end
 
--- Color thresholds (Tokyo Night palette)
+-- Color helpers — resolved dynamically from the active palette
 local function usage_color_esc(pct)
-  if pct >= 80 then
-    return hex_to_fg("#f7768e") -- red
-  elseif pct >= 50 then
-    return hex_to_fg("#e0af68") -- yellow
-  else
-    return hex_to_fg("#9ece6a") -- green
-  end
+  local p = resolve_palette()
+  if pct >= 80 then return hex_to_fg(p.red)
+  elseif pct >= 50 then return hex_to_fg(p.yellow)
+  else return hex_to_fg(p.green) end
 end
 
-local DIM = hex_to_fg("#565f89")
-local BRIGHT = hex_to_fg("#c0caf5")
+local function dim_esc()
+  return hex_to_fg(resolve_palette().dim)
+end
+
+local function bright_esc()
+  return hex_to_fg(resolve_palette().bright)
+end
 
 -- Legacy FormatItem helpers (kept for compatibility if wezterm.format works)
 local function usage_color(pct)
-  if pct >= 80 then
-    return { Foreground = { Color = "#f7768e" } } -- red
-  elseif pct >= 50 then
-    return { Foreground = { Color = "#e0af68" } } -- yellow
-  else
-    return { Foreground = { Color = "#9ece6a" } } -- green
-  end
+  local p = resolve_palette()
+  if pct >= 80 then return { Foreground = { Color = p.red } }
+  elseif pct >= 50 then return { Foreground = { Color = p.yellow } }
+  else return { Foreground = { Color = p.green } } end
 end
 
 local function dim()
-  return { Foreground = { Color = "#565f89" } }
+  return { Foreground = { Color = resolve_palette().dim } }
 end
 
 local function bright()
-  return { Foreground = { Color = "#c0caf5" } }
+  return { Foreground = { Color = resolve_palette().bright } }
 end
 
 -- Deep merge: t2 values override t1, recurses into nested tables
@@ -245,22 +288,24 @@ end
 
 -- Color for burn rate based on urgency
 local function cap_color(secs)
+  local p = resolve_palette()
   if secs < 1800 then
-    return { Foreground = { Color = "#f7768e" } } -- red: <30m
+    return { Foreground = { Color = p.red } }
   elseif secs < 3600 then
-    return { Foreground = { Color = "#e0af68" } } -- yellow: <1h
+    return { Foreground = { Color = p.yellow } }
   else
     return dim()
   end
 end
 
 local function cap_color_esc(secs)
+  local p = resolve_palette()
   if secs < 1800 then
-    return hex_to_fg("#f7768e")
+    return hex_to_fg(p.red)
   elseif secs < 3600 then
-    return hex_to_fg("#e0af68")
+    return hex_to_fg(p.yellow)
   else
-    return DIM
+    return dim_esc()
   end
 end
 
@@ -408,9 +453,13 @@ local DASHBOARD_URL = "https://console.anthropic.com/settings/usage"
 
 -- Build status string using raw ANSI escapes (avoids wezterm.format deserialization issues)
 local function build_status_string(data)
+  local p = resolve_palette()
+  local D = dim_esc()
+  local B = bright_esc()
+
   if data.error then
-    return DIM .. " " .. config.icons.bolt .. " Claude: "
-      .. hex_to_fg("#f7768e") .. tostring(data.error) .. " " .. RESET
+    return D .. " " .. config.icons.bolt .. " Claude: "
+      .. hex_to_fg(p.red) .. tostring(data.error) .. " " .. RESET
   end
 
   local five_pct = data.five_hour and data.five_hour.utilization or 0
@@ -420,19 +469,19 @@ local function build_status_string(data)
   local five_cap = estimate_cap_secs("five")
   local seven_cap = estimate_cap_secs("seven")
 
-  local s = DIM .. " " .. config.icons.bolt .. " "
-    .. BRIGHT .. "5h "
+  local s = D .. " " .. config.icons.bolt .. " "
+    .. B .. "5h "
     .. usage_color_esc(five_pct) .. string.format("%.0f%%", five_pct)
-    .. DIM .. " (" .. time_until(five_reset) .. ")"
+    .. D .. " (" .. time_until(five_reset) .. ")"
 
   if five_cap then
     s = s .. cap_color_esc(five_cap) .. " cap " .. format_cap_time(five_cap)
   end
 
-  s = s .. DIM .. "  " .. config.icons.week .. " "
-    .. BRIGHT .. "7d "
+  s = s .. D .. "  " .. config.icons.week .. " "
+    .. B .. "7d "
     .. usage_color_esc(seven_pct) .. string.format("%.0f%%", seven_pct)
-    .. DIM .. " (" .. time_until(seven_reset) .. ")"
+    .. D .. " (" .. time_until(seven_reset) .. ")"
 
   if seven_cap then
     s = s .. cap_color_esc(seven_cap) .. " cap " .. format_cap_time(seven_cap)
@@ -448,7 +497,7 @@ local function build_cells(data)
   if data.error then
     table.insert(cells, dim())
     table.insert(cells, { Text = " " .. config.icons.bolt .. " Claude: " })
-    table.insert(cells, { Foreground = { Color = "#f7768e" } })
+    table.insert(cells, { Foreground = { Color = resolve_palette().red } })
     table.insert(cells, { Text = tostring(data.error) .. " " })
     return cells
   end

@@ -49,12 +49,38 @@ Pass an options table as the second argument to `apply_to_config`:
 quota.apply_to_config(config, {
   poll_interval_secs = 120,  -- how often to fetch usage (default: 60)
   position = "left",         -- "left" or "right" status bar (default: "right")
+  colors = "auto",           -- "dark", "light", "auto", or custom table (default: "dark")
   icons = {
     bolt = "⚡",              -- prefix icon
     week = "▪",               -- separator before 7-day window
   },
 })
 ```
+
+### Color schemes
+
+The `colors` option controls the palette used for usage indicators:
+
+| Value | Behavior |
+|-------|----------|
+| `"dark"` | Tokyo Night palette — good for dark backgrounds (default) |
+| `"light"` | High-contrast palette — good for light backgrounds |
+| `"auto"` | Follows macOS/system appearance, switching between dark and light |
+| `{ ... }` | Custom colors (see below) |
+
+For full control, pass a table with any combination of these keys:
+
+```lua
+colors = {
+  green  = "#40a02b",  -- < 50% usage
+  yellow = "#df8e1d",  -- 50-79% usage
+  red    = "#d20f39",  -- >= 80% usage
+  dim    = "#6c6f85",  -- labels and separators
+  bright = "#4c4f69",  -- "5h" / "7d" headings
+}
+```
+
+Any omitted keys fall back to the dark palette defaults.
 
 ## Type Annotations
 
