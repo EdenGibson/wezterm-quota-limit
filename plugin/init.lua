@@ -74,6 +74,10 @@ local ESC = "\x1b["
 local RESET = ESC .. "0m"
 
 local function hex_to_fg(hex)
+  if type(hex) ~= "string" or not hex:match("^#%x%x%x%x%x%x$") then
+    wezterm.log_warn("claude-usage: invalid hex color '" .. tostring(hex) .. "', falling back to white")
+    return ESC .. "38;2;255;255;255m"
+  end
   local r = tonumber(hex:sub(2, 3), 16)
   local g = tonumber(hex:sub(4, 5), 16)
   local b = tonumber(hex:sub(6, 7), 16)
