@@ -27,8 +27,8 @@ local PALETTES = {
     green  = "#40a02b",
     yellow = "#df8e1d",
     red    = "#d20f39",
-    dim    = "#6c6f85",
-    bright = "#4c4f69",
+    dim    = "#4c4f69",
+    bright = "#303446",
   },
 }
 
