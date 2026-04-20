@@ -25,4 +25,4 @@ The plugin uses `wezterm.run_child_process` to shell out to `curl` for API calls
 
 ## Color Scheme
 
-Uses Tokyo Night palette: green (#9ece6a) < 50%, yellow (#e0af68) 50-79%, red (#f7768e) >= 80%.
+Supports configurable palettes via the `colors` option: `"dark"` (Tokyo Night — default), `"light"` (high-contrast for light backgrounds), `"auto"` (follows system appearance), or a custom table of hex values. Colors are resolved dynamically on each render via `resolve_palette()`, so `"auto"` reacts to macOS appearance changes without restarting.
