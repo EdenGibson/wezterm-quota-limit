@@ -15,7 +15,7 @@ Single-file Lua plugin at `plugin/init.lua`. WezTerm loads it via its plugin sys
 **Configurable options** (passed via `opts` table to `apply_to_config`):
 - `poll_interval_secs` (default 60)
 - `position` ("left" or "right")
-- `icons` table (bolt, clock, week)
+- `icons` table (week)
 
 ## Development
 

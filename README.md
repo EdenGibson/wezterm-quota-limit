@@ -7,7 +7,7 @@ A WezTerm plugin that shows your Claude API usage quota directly in the terminal
 ## What it shows
 
 ```
-⚡ 5h 42% (2h31m) cap ~3h12m  | 7d 18% (4d12h)
+5h 42% (2h31m) cap ~3h12m  | 7d 18% (4d12h)
 ```
 
 - **5-hour window** — current utilization percentage and time until reset
@@ -51,7 +51,6 @@ quota.apply_to_config(config, {
   position = "left",         -- "left" or "right" status bar (default: "right")
   colors = "auto",           -- "dark", "light", "auto", or custom table (default: "dark")
   icons = {
-    bolt = "⚡",              -- prefix icon
     week = "▪",               -- separator before 7-day window
   },
 })

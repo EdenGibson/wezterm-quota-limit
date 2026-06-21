@@ -9,7 +9,6 @@ local config = {
   dashboard_key = { key = "u", mods = "CTRL|SHIFT" }, -- keybind to open dashboard
   colors = "dark", -- "dark", "light", "auto", or a table { green, yellow, red, dim, bright }
   icons = {
-    bolt = "⚡",
     week = "▪",
   },
 }
@@ -462,7 +461,7 @@ local function build_status_string(data)
   local B = bright_esc()
 
   if data.error then
-    return D .. " " .. config.icons.bolt .. " Claude: "
+    return D .. " Claude: "
       .. hex_to_fg(p.red) .. tostring(data.error) .. " " .. RESET
   end
 
@@ -473,7 +472,7 @@ local function build_status_string(data)
   local five_cap = estimate_cap_secs("five")
   local seven_cap = estimate_cap_secs("seven")
 
-  local s = D .. " " .. config.icons.bolt .. " "
+  local s = D .. " "
     .. B .. "5h "
     .. usage_color_esc(five_pct) .. string.format("%.0f%%", five_pct)
     .. D .. " (" .. time_until(five_reset) .. ")"
@@ -500,7 +499,7 @@ local function build_cells(data)
 
   if data.error then
     table.insert(cells, dim())
-    table.insert(cells, { Text = " " .. config.icons.bolt .. " Claude: " })
+    table.insert(cells, { Text = " Claude: " })
     table.insert(cells, { Foreground = { Color = resolve_palette().red } })
     table.insert(cells, { Text = tostring(data.error) .. " " })
     return cells
@@ -514,9 +513,9 @@ local function build_cells(data)
   local seven_pct = data.seven_day and data.seven_day.utilization or 0
   local seven_reset = data.seven_day and data.seven_day.resets_at
 
-  -- Icon
+  -- Leading space
   table.insert(cells, dim())
-  table.insert(cells, { Text = " " .. config.icons.bolt .. " " })
+  table.insert(cells, { Text = " " })
 
   -- Burn rate estimates
   local five_cap = estimate_cap_secs("five")
